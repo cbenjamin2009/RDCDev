@@ -66,3 +66,15 @@ function updateArc(days) {
     const endAngle = (days / 365) * 2 * Math.PI;
     foreground.datum({ endAngle: endAngle }).attr("d", arc);
 }
+
+function autoRefresh() {
+    const now = new Date();
+    const nextRefresh = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    const timeUntilNextRefresh = nextRefresh - now;
+
+    setTimeout(() => {
+        location.reload();
+    }, timeUntilNextRefresh);
+}
+
+autoRefresh();
