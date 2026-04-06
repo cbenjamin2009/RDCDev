@@ -54,30 +54,30 @@ export default function Dashboard() {
       <div style={{
         background: NAVY,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1.25rem 3rem',
+        padding: '1.65rem 3.9rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.3rem' }}>
           <span style={{
             fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: '1.6rem', color: GOLD,
+            fontSize: '2.08rem', color: '#FFFFFF',
             letterSpacing: '0.1em', lineHeight: 1,
           }}>
             RUSH
           </span>
-          <div style={{ width: '1px', height: '1rem', background: '#2E3D5E' }} />
+          <div style={{ width: '1px', height: '1.3rem', background: '#2E3D5E' }} />
           <span style={{
-            fontWeight: 300, fontSize: '0.68rem',
-            letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6A7A9A',
+            fontWeight: 400, fontSize: '1.01rem',
+            letterSpacing: '0.18em', textTransform: 'uppercase', color: '#D7DFF0',
           }}>
             Land Acquisition &nbsp;/&nbsp; Deal Activity
           </span>
         </div>
-        <button
+          <button
           onClick={() => navigate('/update')}
           style={{
             background: 'none', border: '1px solid #2E3D5E',
             borderRadius: '2px', cursor: 'pointer', color: '#6A7A9A',
-            padding: '0.35rem 0.9rem', fontSize: '0.68rem',
+            padding: '0.46rem 1.17rem', fontSize: '0.88rem',
             letterSpacing: '0.15em', textTransform: 'uppercase',
             fontFamily: "'DM Sans', sans-serif", transition: 'all 0.15s',
           }}
@@ -121,17 +121,17 @@ function Panel({ label, days, date }) {
       padding: '2rem 3rem 4rem',
     }}>
       <div style={{
-        fontSize: '0.7rem', letterSpacing: '0.3em',
-        textTransform: 'uppercase', color: MUTED,
-        marginBottom: '1rem', fontWeight: 500,
+        fontSize: 'clamp(1rem, 1.15vw, 1.45rem)',
+        letterSpacing: '0.22em', textTransform: 'uppercase',
+        color: NAVY, marginBottom: '1.15rem', fontWeight: 700,
       }}>
         {label}
       </div>
 
       <div style={{
         fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: 'clamp(4rem, 22vw, 22rem)',
-        lineHeight: 0.86,
+        fontSize: 'clamp(4.5rem, 23vw, 23rem)',
+        lineHeight: 0.84,
         color: days === null ? SUBTLE : '#1A2340',
         letterSpacing: '-0.01em', userSelect: 'none',
       }}>
@@ -139,15 +139,15 @@ function Panel({ label, days, date }) {
       </div>
 
       <div style={{
-        fontSize: 'clamp(0.65rem, 1vw, 0.9rem)', letterSpacing: '0.25em',
-        textTransform: 'uppercase', color: SUBTLE,
-        fontWeight: 400, marginTop: '0.75rem',
+        fontSize: 'clamp(0.95rem, 1.1vw, 1.35rem)',
+        letterSpacing: '0.24em', textTransform: 'uppercase',
+        color: NAVY, fontWeight: 700, marginTop: '0.9rem',
       }}>
         days
       </div>
 
       <div style={{
-        fontSize: 'clamp(0.78rem, 0.85vw, 0.9rem)',
+        fontSize: 'clamp(0.92rem, 0.9vw, 1.05rem)',
         color: MUTED, marginTop: '2rem', letterSpacing: '0.04em',
       }}>
         {date}

@@ -8,17 +8,45 @@ const BORDER = '#E2DDD6';
 const MUTED  = '#9A948A';
 const SUBTLE = '#C8C2B8';
 
+function todayDateValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function isFutureDate(dateStr) {
+  if (!dateStr) return false;
+  return dateStr > todayDateValue();
+}
+
 const labelSt = {
   display: 'flex', flexDirection: 'column', gap: '0.4rem',
   fontSize: '0.72rem', letterSpacing: '0.14em',
   textTransform: 'uppercase', color: MUTED,
   fontFamily: "'DM Sans', sans-serif",
 };
-const inputSt = {
+const inputBaseSt = {
   padding: '0.65rem 0.9rem', border: `1px solid ${BORDER}`,
   borderRadius: '2px', fontSize: '0.9rem', color: NAVY,
   background: '#fff', outline: 'none', width: '100%',
   fontFamily: "'DM Sans', sans-serif",
+};
+function inputSt(isCurrent) {
+  return {
+    ...inputBaseSt,
+    borderColor: isCurrent ? GOLD : BORDER,
+    background: isCurrent ? '#FFF9EF' : '#fff',
+    boxShadow: isCurrent ? '0 0 0 1px rgba(184,154,90,0.18)' : 'none',
+  };
+}
+const currentPillSt = {
+  display: 'inline-flex', alignItems: 'center', alignSelf: 'flex-start',
+  padding: '0.18rem 0.55rem', borderRadius: '999px',
+  background: '#FFF3DA', border: '1px solid rgba(184,154,90,0.35)',
+  color: NAVY, fontSize: '0.62rem', letterSpacing: '0.12em',
+  textTransform: 'uppercase', fontWeight: 700,
 };
 const btnPrimary = {
   padding: '0.8rem 2rem', background: NAVY, color: '#fff',
@@ -42,14 +70,15 @@ function formatDate(dateStr) {
 
 export default function Update() {
   const navigate = useNavigate();
+  const today = todayDateValue();
 
   // Current saved dates
   const [currentMutual,   setCurrentMutual]   = useState(null);
   const [currentPurchase, setCurrentPurchase] = useState(null);
 
   // Manual form
-  const [manualMutual,   setManualMutual]   = useState('');
-  const [manualPurchase, setManualPurchase] = useState('');
+  const [manualMutual,   setManualMutual]   = useState(today);
+  const [manualPurchase, setManualPurchase] = useState(today);
 
   // Status
   const [saving,  setSaving]  = useState(false);
@@ -60,16 +89,23 @@ export default function Update() {
     fetch('/api/dates')
       .then(r => r.json())
       .then(d => {
-        setCurrentMutual(d.mutualDate     || null);
-        setCurrentPurchase(d.purchaseDate || null);
+        const mutual = d.mutualDate || null;
+        const purchase = d.purchaseDate || null;
+        setCurrentMutual(mutual);
+        setCurrentPurchase(purchase);
+        setManualMutual(mutual || today);
+        setManualPurchase(purchase || today);
       })
       .catch(() => {});
-  }, []);
+  }, [today]);
 
   async function save(mutualDate, purchaseDate) {
     setSaving(true);
     setError('');
     try {
+      if (isFutureDate(mutualDate) || isFutureDate(purchaseDate)) {
+        throw new Error('future-date');
+      }
       const res = await fetch('/api/dates', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -79,15 +115,17 @@ export default function Update() {
       setSuccess(true);
       setTimeout(() => navigate('/'), 1200);
     } catch (e) {
-      setError('Could not save. Make sure the server is running.');
+      setError(e?.message === 'future-date'
+        ? 'Future dates are not allowed.'
+        : 'Could not save. Make sure the server is running.');
     } finally {
       setSaving(false);
     }
   }
 
   function handleManualSave() {
-    const m = manualMutual   || currentMutual;
-    const p = manualPurchase || currentPurchase;
+    const m = manualMutual === '' ? currentMutual : manualMutual;
+    const p = manualPurchase === '' ? currentPurchase : manualPurchase;
     save(m, p);
   }
 
@@ -102,30 +140,30 @@ export default function Update() {
       <div style={{
         background: NAVY,
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '1.25rem 3rem',
+        padding: '1.65rem 3.9rem',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.3rem' }}>
           <span style={{
             fontFamily: "'Bebas Neue', sans-serif",
-            fontSize: '1.6rem', color: GOLD,
+            fontSize: '2.08rem', color: GOLD,
             letterSpacing: '0.1em', lineHeight: 1,
           }}>
             RUSH
           </span>
-          <div style={{ width: '1px', height: '1rem', background: '#2E3D5E' }} />
+          <div style={{ width: '1px', height: '1.3rem', background: '#2E3D5E' }} />
           <span style={{
-            fontWeight: 300, fontSize: '0.68rem',
+            fontWeight: 300, fontSize: '0.88rem',
             letterSpacing: '0.22em', textTransform: 'uppercase', color: '#6A7A9A',
           }}>
             Update Deal Dates
           </span>
         </div>
-        <button
+          <button
           onClick={() => navigate('/')}
           style={{
             background: 'none', border: '1px solid #2E3D5E',
             borderRadius: '2px', cursor: 'pointer', color: '#6A7A9A',
-            padding: '0.35rem 0.9rem', fontSize: '0.68rem',
+            padding: '0.46rem 1.17rem', fontSize: '0.88rem',
             letterSpacing: '0.15em', textTransform: 'uppercase',
             fontFamily: "'DM Sans', sans-serif",
           }}
@@ -168,25 +206,49 @@ export default function Update() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <label style={labelSt}>
-              Last Mutual Date
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                <span>Last Mutual Date</span>
+                {currentMutual && manualMutual === currentMutual && (
+                  <span style={currentPillSt}>Current</span>
+                )}
+                {!currentMutual && manualMutual === today && (
+                  <span style={currentPillSt}>Today</span>
+                )}
+              </div>
               <input
                 type="date"
                 value={manualMutual}
                 onChange={e => setManualMutual(e.target.value)}
-                style={inputSt}
+                max={today}
+                style={inputSt(Boolean(currentMutual && manualMutual === currentMutual) || (!currentMutual && manualMutual === today))}
               />
+              <span style={{ fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'none', color: SUBTLE }}>
+                {currentMutual ? `Saved date: ${formatDate(currentMutual)}` : 'No saved mutual date yet'}
+              </span>
             </label>
             <label style={labelSt}>
-              Last Purchase Date
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                <span>Last Purchase Date</span>
+                {currentPurchase && manualPurchase === currentPurchase && (
+                  <span style={currentPillSt}>Current</span>
+                )}
+                {!currentPurchase && manualPurchase === today && (
+                  <span style={currentPillSt}>Today</span>
+                )}
+              </div>
               <input
                 type="date"
                 value={manualPurchase}
                 onChange={e => setManualPurchase(e.target.value)}
-                style={inputSt}
+                max={today}
+                style={inputSt(Boolean(currentPurchase && manualPurchase === currentPurchase) || (!currentPurchase && manualPurchase === today))}
               />
+              <span style={{ fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'none', color: SUBTLE }}>
+                {currentPurchase ? `Saved date: ${formatDate(currentPurchase)}` : 'No saved purchase date yet'}
+              </span>
             </label>
             <p style={{ fontSize: '0.78rem', color: SUBTLE, lineHeight: 1.6, margin: 0 }}>
-              Leave a field blank to keep its current value.
+              Future dates are blocked. Clear a field only if you want to preserve the current saved value.
             </p>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
               <button onClick={handleManualSave} disabled={saving} style={btnPrimary}>
