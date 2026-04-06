@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as XLSX from 'xlsx';
 
 const NAVY   = '#1A2340';
 const GOLD   = '#B89A5A';
@@ -41,20 +40,8 @@ function formatDate(dateStr) {
   });
 }
 
-function getMostRecent(rows, colIdx) {
-  let latest = null;
-  for (const row of rows) {
-    const val = row[colIdx];
-    if (!val) continue;
-    const d = val instanceof Date ? val : new Date(val);
-    if (!isNaN(d) && (!latest || d > latest)) latest = d;
-  }
-  return latest ? latest.toISOString().split('T')[0] : null;
-}
-
 export default function Update() {
   const navigate = useNavigate();
-  const [tab, setTab] = useState('manual');
 
   // Current saved dates
   const [currentMutual,   setCurrentMutual]   = useState(null);
@@ -63,14 +50,6 @@ export default function Update() {
   // Manual form
   const [manualMutual,   setManualMutual]   = useState('');
   const [manualPurchase, setManualPurchase] = useState('');
-
-  // Excel
-  const [headers,     setHeaders]     = useState([]);
-  const [rows,        setRows]        = useState([]);
-  const [fileReady,   setFileReady]   = useState(false);
-  const [mutualCol,   setMutualCol]   = useState('');
-  const [purchaseCol, setPurchaseCol] = useState('');
-  const [fileName,    setFileName]    = useState('');
 
   // Status
   const [saving,  setSaving]  = useState(false);
@@ -110,31 +89,6 @@ export default function Update() {
     const m = manualMutual   || currentMutual;
     const p = manualPurchase || currentPurchase;
     save(m, p);
-  }
-
-  function handleFile(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    setFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const wb   = XLSX.read(evt.target.result, { type: 'array', cellDates: true });
-      const ws   = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
-      if (data.length < 2) return;
-      setHeaders((data[0] || []).map(String));
-      setRows(data.slice(1));
-      setFileReady(true);
-    };
-    reader.readAsArrayBuffer(file);
-  }
-
-  function handleExcelSave() {
-    const mIdx = headers.indexOf(mutualCol);
-    const pIdx = headers.indexOf(purchaseCol);
-    const newM = mIdx >= 0 ? getMostRecent(rows, mIdx) : null;
-    const newP = pIdx >= 0 ? getMostRecent(rows, pIdx) : null;
-    save(newM || currentMutual, newP || currentPurchase);
   }
 
   return (
@@ -212,104 +166,35 @@ export default function Update() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: '1.75rem' }}>
-            {[['manual', 'Manual Entry'], ['upload', 'Upload Excel']].map(([key, label]) => (
-              <button key={key} onClick={() => setTab(key)} style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '0.5rem 1.25rem', marginBottom: '-1px',
-                fontSize: '0.72rem', letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: tab === key ? NAVY : MUTED,
-                borderBottom: tab === key ? `2px solid ${GOLD}` : '2px solid transparent',
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                {label}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <label style={labelSt}>
+              Last Mutual Date
+              <input
+                type="date"
+                value={manualMutual}
+                onChange={e => setManualMutual(e.target.value)}
+                style={inputSt}
+              />
+            </label>
+            <label style={labelSt}>
+              Last Purchase Date
+              <input
+                type="date"
+                value={manualPurchase}
+                onChange={e => setManualPurchase(e.target.value)}
+                style={inputSt}
+              />
+            </label>
+            <p style={{ fontSize: '0.78rem', color: SUBTLE, lineHeight: 1.6, margin: 0 }}>
+              Leave a field blank to keep its current value.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+              <button onClick={handleManualSave} disabled={saving} style={btnPrimary}>
+                {saving ? 'Saving…' : 'Save'}
               </button>
-            ))}
+              <button onClick={() => navigate('/')} style={btnSecondary}>Cancel</button>
+            </div>
           </div>
-
-          {/* Manual tab */}
-          {tab === 'manual' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <label style={labelSt}>
-                Last Mutual Date
-                <input
-                  type="date"
-                  value={manualMutual}
-                  onChange={e => setManualMutual(e.target.value)}
-                  style={inputSt}
-                />
-              </label>
-              <label style={labelSt}>
-                Last Purchase Date
-                <input
-                  type="date"
-                  value={manualPurchase}
-                  onChange={e => setManualPurchase(e.target.value)}
-                  style={inputSt}
-                />
-              </label>
-              <p style={{ fontSize: '0.78rem', color: SUBTLE, lineHeight: 1.6, margin: 0 }}>
-                Leave a field blank to keep its current value.
-              </p>
-              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                <button onClick={handleManualSave} disabled={saving} style={btnPrimary}>
-                  {saving ? 'Saving…' : 'Save'}
-                </button>
-                <button onClick={() => navigate('/')} style={btnSecondary}>Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {/* Upload tab */}
-          {tab === 'upload' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <label style={labelSt}>
-                Excel or CSV File
-                <input
-                  type="file"
-                  accept=".xlsx,.xls,.csv"
-                  onChange={handleFile}
-                  style={{ marginTop: '0.4rem', fontSize: '0.85rem', color: '#555', fontFamily: "'DM Sans', sans-serif" }}
-                />
-                {fileName && (
-                  <span style={{ fontSize: '0.75rem', color: GOLD, marginTop: '0.2rem' }}>{fileName}</span>
-                )}
-              </label>
-
-              {!fileReady && (
-                <p style={{ fontSize: '0.78rem', color: SUBTLE, lineHeight: 1.6, margin: 0 }}>
-                  Upload your spreadsheet and select which columns contain the mutual and purchase dates.
-                  The app will automatically find the most recent date in each column.
-                </p>
-              )}
-
-              {fileReady && (
-                <>
-                  <label style={labelSt}>
-                    Mutual Date Column
-                    <select value={mutualCol} onChange={e => setMutualCol(e.target.value)} style={inputSt}>
-                      <option value="">— select column —</option>
-                      {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </label>
-                  <label style={labelSt}>
-                    Purchase Date Column
-                    <select value={purchaseCol} onChange={e => setPurchaseCol(e.target.value)} style={inputSt}>
-                      <option value="">— select column —</option>
-                      {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                    </select>
-                  </label>
-                  <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                    <button onClick={handleExcelSave} disabled={saving} style={btnPrimary}>
-                      {saving ? 'Saving…' : 'Apply & Save'}
-                    </button>
-                    <button onClick={() => navigate('/')} style={btnSecondary}>Cancel</button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
 
           {/* Feedback */}
           {success && (
