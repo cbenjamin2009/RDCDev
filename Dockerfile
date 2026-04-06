@@ -19,5 +19,5 @@ COPY --from=builder /app/client/dist ./client/dist
 # Data directory (override with a volume mount)
 RUN mkdir -p /data
 
-EXPOSE 3000
+EXPOSE 3011
 CMD ["node", "server.js"]

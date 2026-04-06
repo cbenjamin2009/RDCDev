@@ -8,14 +8,14 @@ Wall-mounted dashboard showing days since last mutual and last property purchase
 docker compose up --build
 ```
 
-Then open `http://localhost:3000` on the display machine.
+Then open `http://localhost:3011` on the display machine.
 
 ## Usage
 
 | URL | Purpose |
 |-----|---------|
-| `http://localhost:3000/` | Wall display — full-screen this on the monitor |
-| `http://localhost:3000/update` | Update the dates manually |
+| `http://localhost:3011/` | Wall display — full-screen this on the monitor |
+| `http://localhost:3011/update` | Update the dates manually |
 
 ## Data
 

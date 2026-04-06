@@ -2,7 +2,7 @@ services:
   deal-tracker:
     build: .
     ports:
-      - "3000:3000"
+      - "3011:3011"
     volumes:
       - ./data:/data   # dates.json persists here on the host
     restart: unless-stopped
