@@ -13,13 +13,6 @@ function daysSince(dateStr) {
   return Math.floor((new Date() - new Date(dateStr)) / 86400000);
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return 'No date on record';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'long', day: 'numeric', year: 'numeric',
-  });
-}
-
 export default function Dashboard() {
   const [mutualDate,   setMutualDate]   = useState(null);
   const [purchaseDate, setPurchaseDate] = useState(null);
@@ -27,17 +20,30 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch('/api/dates')
-      .then(r => r.json())
-      .then(d => {
-        setMutualDate(d.mutualDate     || null);
-        setPurchaseDate(d.purchaseDate || null);
-      })
-      .catch(() => {});
+    let alive = true;
+
+    const loadDates = () => {
+      fetch('/api/dates')
+        .then(r => r.json())
+        .then(d => {
+          if (!alive) return;
+          setMutualDate(d.mutualDate || null);
+          setPurchaseDate(d.purchaseDate || null);
+        })
+        .catch(() => {});
+    };
+
+    loadDates();
 
     // Refresh day counters every hour if left open overnight
     const id = setInterval(() => forceUpdate(n => n + 1), 3_600_000);
-    return () => clearInterval(id);
+    const pollId = setInterval(loadDates, 60_000);
+
+    return () => {
+      alive = false;
+      clearInterval(id);
+      clearInterval(pollId);
+    };
   }, []);
 
   const mutualDays   = daysSince(mutualDate);
@@ -97,7 +103,6 @@ export default function Dashboard() {
         <Panel
           label="Days Since Last Mutual"
           days={mutualDays}
-          date={formatDate(mutualDate)}
         />
 
         <div style={{ width: '1px', background: BORDER, margin: '4rem 0' }} />
@@ -105,7 +110,6 @@ export default function Dashboard() {
         <Panel
           label="Days Since Last Purchase"
           days={purchaseDays}
-          date={formatDate(purchaseDate)}
         />
 
       </div>
@@ -113,7 +117,7 @@ export default function Dashboard() {
   );
 }
 
-function Panel({ label, days, date }) {
+function Panel({ label, days }) {
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -144,13 +148,6 @@ function Panel({ label, days, date }) {
         color: NAVY, fontWeight: 700, marginTop: '0.9rem',
       }}>
         days
-      </div>
-
-      <div style={{
-        fontSize: 'clamp(0.92rem, 0.9vw, 1.05rem)',
-        color: MUTED, marginTop: '2rem', letterSpacing: '0.04em',
-      }}>
-        {date}
       </div>
     </div>
   );
